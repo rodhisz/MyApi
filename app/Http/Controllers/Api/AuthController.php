@@ -42,7 +42,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'telp' => $request->telp,
-            'password' => bcrypt($request->password),
+            'password' => encrypt($request->password),
         ]);
 
         return response()->json([
