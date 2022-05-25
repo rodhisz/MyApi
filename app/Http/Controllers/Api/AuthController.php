@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 
+use function PHPUnit\Framework\isEmpty;
+
 class AuthController extends Controller
 {
 
@@ -33,44 +35,50 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
         ], $pesan);
 
-        if($validasi->fails()){
+        if ($validasi->fails()) {
             $val = $validasi->errors()->all();
-            return $this -> responError($val[0]);
+            return $this->responError($val[0]);
         }
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'telp' => $request->telp,
-            'password' => encrypt($request->password),
+            'password' => bcrypt($request->password),
         ]);
 
         return response()->json([
-            'status' => 'Success',
-            'message' => 'Successfully created user!'
+            'status' => '1',
+            'message' => 'Successfully created user!',
+		    'data' => $user
         ], Response::HTTP_OK);
     }
 
-    public function login(Request $request){
+    public function login(Request $request)
+    {
 
         $user = User::where('email', $request->email)->first();
 
-        if($user){
-            if(password_verify($request->password, $user->password)){
+        if ($user) {
+            if (password_verify($request->password, $user->password)) {
                 return response()->json([
-                    'pesan'    => "Halo $user->name, Selamat Datang!",
-                ],Response::HTTP_OK);
+                    'status' => '1',
+                    'message'    => "Halo $user->name, Selamat Datang!",
+			        'data' => $user
+                ], Response::HTTP_OK);
             }
-                return $this -> responError("Password Salah");
-        } elseif($request->email == null){
-            return $this -> responError("Email Tidak Boleh Kosong`");
-        }
+            return $this->responError("Kesalahan Input");
+        } elseif ($request->email == null) {
+            return $this->responError("Email Tidak Boleh Kosong`");
+        } elseif (isEmpty($user)) {
+            return $this->responError("Email Tidak Terdaftar");}
     }
 
     public function responError($pesan)
     {
         return response()->json([
+            'status' => '0',
             'message'   => $pesan
-        ], Response::HTTP_UNAUTHORIZED);
+        ], Response::HTTP_OK);
     }
 }
